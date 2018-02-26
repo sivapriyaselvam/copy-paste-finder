@@ -1,0 +1,86 @@
+*cpf.txt*	Plugin for finding copy/paste regions in code
+
+cpf                                                  *cpf* *copy_paste_finder*
+Last Change: 2018-02-26
+For Vim version 8.0 and above
+
+
+Overview                                |cpf-overview|
+Requirements                            |cpf-requirements|
+Installation                            |cpf-installation|
+Usage                                   |cpf-usage|
+Limitations                             |cpf-limitations|
+
+==============================================================================
+OVERVIEW                                                        *cpf-overview*
+
+CPF (Copy/Paste Finder) makes PMD/CPD's output easier to navigate.
+CPF shows detected copied/pasted regions in vertical splits and highlights
+the found regions.
+
+
+==============================================================================
+REQUIREMENTS                                                *cpf-requirements*
+
+CPF depends on PMD software and needs Vim's quickfix feature.
+
+See https://pmd.github.io/ to download PMD and for more info.
+
+PMD is an open source static Java source code analyzer.
+PMD's Copy/Paste Detector (CPD) can find duplicate code.
+
+Tested with Vim version 8.0 and above; it may work with older vim, but not
+verified.  This plugin only works if 'compatible' is not set.
+{Vi does not have the required features.}
+
+
+==============================================================================
+INSTALLATION                                                *cpf-installation*
+
+  - copy pmdcpd.vim to the compiler directory
+  - copy cpf.vim to plugin directory
+      i.e. inside $HOME/vimfiles (or runtime directory):
+        compiler/pmdcpd.vim
+        plugin/cpf.vim
+  - ensure java environment
+  - ensure cpd (e.g. cpd.bat) is found in the path
+  - ensure cpd runs correctly
+
+
+==============================================================================
+USAGE                                                              *cpf-usage*
+
+  - Run gvim to open a new gvim window
+  - Ensure current working directory is correct in gvim
+  - During an editing session:
+      :call Lib_Widen()
+      :compiler pmdcpd
+      :set makeprg=cpd.bat\ --minimum-tokens\ 20\ --language\ cpp\ --files\ .
+      :make!
+      :call Cpf_Init()
+      :call Cpf_Next()
+
+The call Cpf_Next() can be repeated to see more duplicates
+
+Mapping ~
+       
+Following commands can be used to map a key to Cpf_Next.
+For example to use function key 'F4' use the commands below:
+  :unmap <F4>
+  :nmap <F4> :call Cpf_Next()<CR>
+
+
+==============================================================================
+LIMITATIONS                                                  *cpf-limitations*
+
+  - can only see two windows with a vertical split at a time
+  - QuickFixCmd* to further simplify
+  - to check http://strlen.com/sloppy/ and to support it
+  - may need to scroll the window --- try 'zz'?
+  - support more windows
+  - support showing previous duplicate (opposite of Cpf_Next())
+
+
+==============================================================================
+
+vim:tw=78:ft=help:ts=8:
