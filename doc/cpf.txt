@@ -1,7 +1,7 @@
 *cpf.txt*	Plugin for finding copy/paste regions in code
 
 cpf                                                  *cpf* *copy_paste_finder*
-Last Change: 2018-02-26
+Last Change: 2018-03-05
 For Vim version 8.0 and above
 
 
@@ -14,7 +14,7 @@ Limitations                             |cpf-limitations|
 ==============================================================================
 OVERVIEW                                                        *cpf-overview*
 
-CPF (Copy/Paste Finder) makes PMD/CPD's output easier to navigate.
+CPF (Copy/Paste Finder) makes PMD/CPD's or Sloppy's output easier to navigate.
 CPF shows detected copied/pasted regions in vertical splits and highlights
 the found regions.
 
@@ -22,12 +22,26 @@ the found regions.
 ==============================================================================
 REQUIREMENTS                                                *cpf-requirements*
 
-CPF depends on PMD software and needs Vim's quickfix feature.
+CPF depends on PMD or Sloppy software and needs Vim's quickfix feature.
 
-See https://pmd.github.io/ to download PMD and for more info.
+PMD/CPD
+-------
+PMD's Copy/Paste Detector (CPD) finds duplicated code.
+PMD is an extensible cross-language static code analyzer.
+PMD is an open source project.
 
-PMD is an open source static Java source code analyzer.
-PMD's Copy/Paste Detector (CPD) can find duplicate code.
+see https://pmd.github.io/ to download it and for more info.
+
+Sloppy
+------
+Sloppy scans all source code in a directory and generates a report on how
+'sloppy' the code is... sloppiness being a measurement of a repetitive code
+style: under abstraction (copy / pasting) and over abstraction (pointless
+complexity).
+
+Sloppy is written by Wouter van Oortmerssen.
+
+see http://strlen.com/sloppy/ to download it and for more info.
 
 Tested with Vim version 8.0 and above; it may work with older vim, but not
 verified.  This plugin only works if 'compatible' is not set.
@@ -38,47 +52,74 @@ verified.  This plugin only works if 'compatible' is not set.
 INSTALLATION                                                *cpf-installation*
 
   - copy pmdcpd.vim to the compiler directory
+  - copy sloppy.vim to the compiler directory
   - copy cpf.vim to plugin directory
       i.e. inside $HOME/vimfiles (or runtime directory):
         compiler/pmdcpd.vim
+        compiler/sloppy.vim
         plugin/cpf.vim
-  - ensure java environment
+  - ensure java environment or sloppy executable in path
   - ensure cpd (e.g. cpd.bat) is found in the path
-  - ensure cpd runs correctly
+  - ensure cpd or sloppy runs correctly
+
+The Sloppy release has sloppy.exe which runs on windows.
+However for the original sloppy, a batch file is required.
+For example: sloppy.bat
+    >> @echo off
+    >> echo. | sloppy %*
+Above batch file helps sloppy to exit---otherwise it waits for
+enter key to be pressed.
 
 
 ==============================================================================
 USAGE                                                              *cpf-usage*
 
+Steps below targets Microsoft Windows. Similar steps can be used with
+Linux or Unix* operating systems.
+
   - Run gvim to open a new gvim window
   - Ensure current working directory is correct in gvim
   - During an editing session:
-      :call Lib_Widen()
       :compiler pmdcpd
       :set makeprg=cpd.bat\ --minimum-tokens\ 20\ --language\ cpp\ --files\ .
       :make!
-      :call Cpf_Init()
-      :call Cpf_Next()
+      :CpfNext
 
-The call Cpf_Next() can be repeated to see more duplicates
+Or
+      :compiler sloppy
+      :makeprg=sloppy.bat
+      :make!
+      :CpfNext
+
+can be used with sloppy
+
+This plugin provides Cpf_Close() and Cpf_Reset().
+Cpf_Close() resets the window options used by the plugin.
+Cpf_Reset() removes splits and reverts to original window width.
+Cpf_Previous() also available, but only partially functional.
+
+The command CpfNext can be repeated to see more duplicates
 
 Mapping ~
        
 Following commands can be used to map a key to Cpf_Next.
 For example to use function key 'F4' use the commands below:
   :unmap <F4>
+  :nmap <F4> :CpfNext<CR>
+or
   :nmap <F4> :call Cpf_Next()<CR>
-
 
 ==============================================================================
 LIMITATIONS                                                  *cpf-limitations*
 
-  - can only see two windows with a vertical split at a time
-  - QuickFixCmd* to further simplify
-  - to check http://strlen.com/sloppy/ and to support it
-  - may need to scroll the window --- try 'zz'?
-  - support more windows
+  - can only see two windows with a (vertical) split at a time
+  - work along with other plugins (e.g. taglist, nerdtree...)
+  - support more windows; now only 2 (see wincount)
   - support showing previous duplicate (opposite of Cpf_Next())
+  - silent, normal or execute may be redundant in some cases
+  - need to skip lines with no code or lines with comment only
+  - deciding whether to save buffers before jumping to next section
+  - if quickfix windows is visible may need to scroll/redraw
 
 
 ==============================================================================
