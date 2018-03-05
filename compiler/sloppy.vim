@@ -1,5 +1,5 @@
 " Vim compiler file
-" Compiler:     Copy/Paste Detector of PMD
+" Compiler:     Sloppy
 " Maintainer:   Skycolor Radialsum
 " Last Change:  2018-03-05
 "
@@ -7,15 +7,15 @@
 " Copy/Paste Finder is a Vim plugin for viewing copied-pasted code
 " side-by-side
 "
-" PMD is an extensible cross-language static code analyzer.
-" see https://pmd.github.io/ to download it and for more info.
+" Sloppy is written by Wouter van Oortmerssen.
+" see http://strlen.com/sloppy/ to download it and for more info.
 "
 
 if exists("current_compiler")
   finish
 endif
 
-let current_compiler = "pmdcpd"
+let current_compiler = "sloppy"
 
 let s:cpo_save = &cpo
 set cpo&vim
@@ -24,14 +24,14 @@ if exists(":CompilerSet") != 2  " older Vim always used :setlocal
   command -nargs=* CompilerSet setlocal <args>
 endif
 
-" Example of cpd's output
-"   || Found a 6 line (47 tokens) duplication in the following files:
-"   || Starting at line 3886 of file.cpp
+" Example of sloppy's output
+"   || 82 tokens & 4 skips (2122 sloppiness, 5.26% of total) starting at:
+"   || => file.cpp:3919
 
 " FIXME: makeprg is valid only for Microsoft Windows
-CompilerSet makeprg=cpd.bat\ --minimum-tokens\ 20\ --language\ cpp\ --files\ .
+CompilerSet makeprg=sloppy.bat
 
-CompilerSet errorformat=Starting\ at\ line\ %l\ of\ %f
+CompilerSet errorformat==>\ %f:%l
 
 " NOTE: au command below works with single file/window;
 "       but can cause problems with many buffers/files/windows.
