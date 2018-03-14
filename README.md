@@ -9,8 +9,11 @@ CPF shows detected copied/pasted regions in vertical splits and highlights
 the found regions.
 
 
-See [Vim doc](doc/cpf.txt) file for installation instructions and for more info.
+See [Vim doc](doc/cpf.txt) file for usage and installation instructions and for more info.
 
+Below is a screenshot of Copy/Paste Finder with GVim 8.0 and PMD/CPD 6.1.0.
+
+![Copy Paste Finder in GVim 8.0](cpf-v002.png)
 
 PMD/CPD
 -------
@@ -31,7 +34,20 @@ Sloppy is written by Wouter van Oortmerssen.
 
 see http://strlen.com/sloppy/ to download it and for more info.
 
-Note
--------
-Tested with Vim version 8.0 and above; it may work with older vim, but not
-verified.  This plugin only works if 'compatible' is not set.
+Notes
+-----
+> Tested with Vim version 8.0 and above. It can run on Vim 7.4 too, but not
+  fully verified.  This plugin works only if 'compatible' is not set.
+
+> Above source code in the screenshot can be found at: _Template Method_ 
+  section of the web page _C++ Programming/Code/Design Patterns_ 
+  that is found at WikiBooks. see:
+>
+>  https://en.wikibooks.org/wiki/C%2B%2B_Programming/Code/Design_Patterns#Template_Method
+
+> Above screenshot uses Hack font.
+> see https://sourcefoundry.org/hack/  or https://github.com/source-foundry/Hack
+
+> Source file was formatted by clang-format (version LLVM 6.0.0) with:
+>
+> `clang-format -style="{BasedOnStyle: Google, ColumnLimit: 55}" in.cpp > out.cpp`
