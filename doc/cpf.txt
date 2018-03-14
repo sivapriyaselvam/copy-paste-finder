@@ -85,20 +85,26 @@ Linux or Unix* operating systems.
       :make!
       :CpfNext
 
-Or
+Or following can be used with sloppy:
       :compiler sloppy
       :makeprg=sloppy.bat
       :make!
       :CpfNext
 
-can be used with sloppy
+The command CpfNext can be repeated to see more duplicates
+
+With Vim 8.0, if ':make!' is called then script automatically reloads the
+quickfix list.
+
+With Vim 7.4, automatic reloading of quickfix list is not possible after
+':make!' is called. The workaround is to call the command below to reload:
+
+      :call Cpf_LoadQflist()
 
 This plugin provides Cpf_Close() and Cpf_Reset().
 Cpf_Close() resets the window options used by the plugin.
 Cpf_Reset() removes splits and reverts to original window width.
 Cpf_Previous() also available, but only partially functional.
-
-The command CpfNext can be repeated to see more duplicates
 
 Mapping ~
        
@@ -113,13 +119,14 @@ or
 LIMITATIONS                                                  *cpf-limitations*
 
   - can only see two windows with a (vertical) split at a time
-  - work along with other plugins (e.g. taglist, nerdtree...)
-  - support more windows; now only 2 (see wincount)
-  - support showing previous duplicate (opposite of Cpf_Next())
+  - yet to work along with other plugins (e.g. taglist, nerdtree...)
+  - yet to support more windows; now only 2 (see wincount)
+  - yet to support showing previous duplicate (opposite of Cpf_Next())
   - silent, normal or execute may be redundant in some cases
   - need to skip lines with no code or lines with comment only
   - deciding whether to save buffers before jumping to next section
   - if quickfix windows is visible may need to scroll/redraw
+  - may need to check and add ':noautocmd' to wincmd
 
 
 ==============================================================================
