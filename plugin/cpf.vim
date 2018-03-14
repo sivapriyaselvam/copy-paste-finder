@@ -4,7 +4,7 @@
 "
 " Vim plugin for viewing copied-pasted code side-by-side
 " Maintainer:   Skycolor Radialsum
-" Last Change:  2018-03-05
+" Last Change:  2018-03-14
 "
 " CPF (Copy/Paste Finder) makes PMD/CPD's or Sloppy's output easier to
 " navigate.  It depends on PMD/CPD or Sloppy software and also it needs
@@ -28,26 +28,26 @@
 " see http://strlen.com/sloppy/ to download it and for more info.
 "
 " NOTE:
-"     * it cannot be used with other plugins that need a window
-"       (e.g. taglist, nerdtree...) or in diff-mode.
-"     * it was tested only on Microsoft Windows with Gvim and with few C++
-"       source files.
-"     * larger repositories may hang Vim or make Vim sluggish.
-"     * this script can be buggy---I still learn Vim!
+"   * it cannot be used with other plugins that need a window
+"     (e.g. taglist, nerdtree...) or in diff-mode.
+"   * it was tested only on Microsoft Windows with Gvim and with few C++
+"     source files.
+"   * larger repositories may hang Vim or make Vim sluggish.
+"   * this script can be buggy---I still learn Vim!
 "
 "
 " Installation
 " ------------
-" * copy pmdcpd.vim to the compiler directory
-" * copy sloppy.vim to the compiler directory
-" * copy cpf.vim to plugin directory
-"     i.e. inside $HOME/vimfiles (or runtime directory):
-"       compiler/pmdcpd.vim
-"       compiler/sloppy.vim
-"       plugin/cpf.vim
-" * ensure java environment or sloppy executable in path
-" * ensure cpd (e.g. cpd.bat) is found in the path
-" * ensure cpd or sloppy runs correctly
+"   * copy pmdcpd.vim to the compiler directory
+"   * copy sloppy.vim to the compiler directory
+"   * copy cpf.vim to plugin directory
+"       i.e. inside $HOME/vimfiles (or runtime directory):
+"         compiler/pmdcpd.vim
+"         compiler/sloppy.vim
+"         plugin/cpf.vim
+"   * ensure java environment or sloppy executable in path
+"   * ensure cpd (e.g. cpd.bat) is found in the path
+"   * ensure cpd or sloppy runs correctly
 "
 " The Sloppy release has sloppy.exe which runs on windows.
 " However for the original sloppy, a batch file is required.
@@ -63,44 +63,50 @@
 " Steps below targets Microsoft Windows. Similar steps can be used with
 " Linux or Unix* operating systems.
 "
-" * Run gvim to open a new gvim window
-" * Ensure current working directory is correct in gvim
-" * During an editing session:
-"     :compiler pmdcpd
-"     :set makeprg=cpd.bat\ --minimum-tokens\ 20\ --language\ cpp\ --files\ .
-"     :make!
-"     :CpfNext
+"   * Run gvim to open a new gvim window
+"   * Ensure current working directory is correct in gvim
+"   * During an editing session:
+"       :compiler pmdcpd
+"       :set makeprg=cpd.bat\ --minimum-tokens\ 20\ --language\ cpp\ --files\ .
+"       :make!
+"       :CpfNext
 "
-" Or
-"     :compiler sloppy
-"     :makeprg=sloppy.bat
-"     :make!
-"     :CpfNext
+" Or following can be used with sloppy:
+"       :compiler sloppy
+"       :makeprg=sloppy.bat
+"       :make!
+"       :CpfNext
 "
-" can be used with sloppy
 "
 " The command CpfNext can be repeated to see more duplicates
+"
+" With Vim 8.0, if ':make!' is called then script automatically reloads the
+" quickfix list.
+"
+" With Vim 7.4, automatic reloading of quickfix list is not possible after
+" ':make!' is called. The workaround is to call the command below to reload:
+"
+"       :call Cpf_LoadQflist()
 "
 " This plugin provides Cpf_Close() and Cpf_Reset().
 " Cpf_Close() resets the window options used by the plugin.
 " Cpf_Reset() removes splits and reverts to original window width.
 " Cpf_Previous() also available, but only partially functional.
 "
-"
 " Mapping
 " -------
 " Following commands can be used to map a key to CpfNext.
 " For example to use function key 'F4' use the commands below:
-"   :unmap <F4>
-"   :nmap <F4> :CpfNext<CR>
+"       :unmap <F4>
+"       :nmap <F4> :CpfNext<CR>
 " or
-"   :nmap <F4> :call Cpf_Next()<CR>
+"       :nmap <F4> :call Cpf_Next()<CR>
 "
 "
 " Limitations
 " -----------
-" can only see two windows with a (vertical) split at a time
-" - see TODO below
+" Can only see two windows with a (vertical) split at a time
+"   - see TODO below
 "
 " TODO
 " ----
@@ -110,7 +116,8 @@
 "   * silent, normal or execute may be redundant in some cases
 "   * need to skip lines with no code or lines with comment only
 "   * deciding whether to save buffers before jumping to next section
-"   * if quickfix windows is visible may need to scroll/redraw
+"   * if quickfix windows is visible may need to scroll/redraw it
+"   * check and add ':noautocmd' to wincmd
 "
 
 if exists('g:loaded_copy_paste_finder')
@@ -125,7 +132,7 @@ let s:wrap_save = &wrap
 let s:sbo_save = &scrollopt
 
 " state variables
-let s:idx = -2      " -2: not initialized; -1: reached max; >=0: valid
+let s:idx = -2      " -2 means not initialized; 0 and greater are valid
 let s:qnum = -1     " quickfix list number; should be 1 or greater
 let s:lines = 0     " number of lines in a copy/paste region
 let s:pos = []      " list of cursor positions
@@ -133,18 +140,30 @@ let s:bnum = []     " list of buffer-numbers - TODO: to check if buf-modified
 let s:lnum = []     " list of line numbers
 let s:qflist = []   " list with all the current quickfix errors
 
+" state variables based on feature
+"  From github and vim docs:
+"  Patch:    8.0.0017
+"  Problem:    Cannot get the number of the current quickfix or location list.
+"  Solution:   Use the current list if "nr" in "what" is zero. ...
+"  Patch:    8.0.1112
+"  Problem:    Can't get size or current index from quickfix list.
+"  Solution:   Add "idx" and "size" options.
+" NOTE: above is not actually verified with specific versions
+let s:has_nr_only = has('patch-8.0.17')
+let s:has_nr_size = has('patch-8.0.1112')
+
 " constants
 let s:wincount = 2  " number of windows updated by the plugin
 let s:firstwin = 1  " TODO - to support taglist/nerdtree etc, if possible
 " NOTE: s:wincount is fixed to 2; may be parameterized later
 
 " configuration
-let s:wrap = 0            " when false longer lines will nor wrap
-let s:topoff = 7          " number of lines to keep above C/P at the window-top
+let s:wrap = 0            " when false longer lines will not wrap
+let s:topoff = 7          " number of lines to keep above C/P-region
 let s:showqfw = 1         " show quickfix window (when have valid errors)
 let s:higroup = 'Visual'  " to highlight the copy/paste sections
 let s:split = 1           " vertical/horizontal split --- not used - TODO
-" NOTE: variables below can be global so that user can set it
+" NOTE: variables above need to be global so that user can set it
 
 
 " if !hasmapto('<Plug>CpfNext', 'n')
@@ -167,14 +186,15 @@ function! Cpf_Next()
   endif
 
   if s:Cpf_Modified() != 0
-    call s:Cpf_EchoError('Error: No write since last change. Please save and retry.')
+    call s:Cpf_EchoError('Error: No write since last change.')
+    call s:Cpf_EchoError('Please ensure that all changes are saved and retry.')
     return 1
   endif
 
   let l:repeat = 1
 
   while l:repeat
-    let l:item = get(s:qflist, s:idx, 0)
+    let l:item = get(s:qflist, s:idx, {})
 
     if !empty(l:item)
       if l:item.lnum > 0
@@ -192,7 +212,9 @@ function! Cpf_Next()
           call remove(s:pos, 0)
           call remove(s:bnum, 0)
           call remove(s:lnum, 0)
-          let l:repeat = 0
+          let s:idx += 1
+
+          break
         endif
       else  " search lines for grouping and line-count of copy/paste regions
         let s:lines = s:Cpf_GetDupLineCount(l:item.text)
@@ -250,9 +272,17 @@ function! s:Cpf_Init()
 endfunction
 
 function! s:Cpf_Load()
-  " NOTE: the getqflist({'nr':0, 'title':1}) is used to get the info
-  "       on currently active quickfix list --- this idea can be wrong
-  let l:curqf = getqflist({'nr':0, 'title':1, 'size':0})
+  " NOTE: the getqflist({'nr':0, 'title':1, 'size':0}) is used to get the info
+  "       on currently active quickfix list --- this depends on vim version
+
+  if s:has_nr_size
+    let l:curqf = getqflist({'nr':0, 'title':0, 'size':0})
+  elseif s:has_nr_only
+    let l:curqf = getqflist({'nr':0, 'title':0})
+    let l:curqf['size'] = len(getqflist())
+  else  " getqflist() does not accept extra arguments
+    let l:curqf = { 'nr': 1, 'title': 'current quickfix list', 'size':1 }
+  endif
 
   if l:curqf.nr <= 0  " TODO: if curqf is empty; or if curqf.nr < 0 ?
     call s:Cpf_EchoError('Error: no quickfix list; did you forget something?')
@@ -276,16 +306,26 @@ function! s:Cpf_Load()
       endif
 
       let s:qnum = l:curqf.nr
-      let s:qflist = getqflist()
-      let s:idx = 0
-      let s:pos = []
-      let s:bnum = []
-      let s:lnum = []
+ 
+      call Cpf_LoadQflist(l:curqf.nr)
 
       silent! crewind
     endif
   endif
   return 0
+endfunction
+
+function! Cpf_LoadQflist(...)
+  if a:0 > 0
+    let s:qnum = a:1
+  else
+    let s:qnum = 1
+  endif
+  let s:qflist = getqflist()
+  let s:idx = 0
+  let s:pos = []
+  let s:bnum = []
+  let s:lnum = []
 endfunction
 
 function! Cpf_Close()
@@ -337,6 +377,7 @@ function! s:Cpf_GetDupLineCount(text)
   if !empty(a:text)
     "PMD_CPD: 'Found a 3 line (45 tokens) duplication...'
     "Sloppy: '55 tokens & 4 skips (1004 sloppiness, 2.49% of total)...'
+
     if match(a:text, '^Found a \d\+ line (\d\+ tokens) duplication') >= 0
       let l:lines = 0 + matchstr(a:text, '^Found a \zs\d\+\ze')
     elseif match(a:text, '^\d\+ tokens . \d\+ skips') >= 0
@@ -368,7 +409,8 @@ function! s:Cpf_Widen()
 
   if winnr('$') > 2
     if s:Cpf_Modified() != 0
-      call s:Cpf_EchoError('Error: No write since last change. Please save and retry.')
+      call s:Cpf_EchoError('Error: No write since last change.')
+      call s:Cpf_EchoError('Please ensure that all changes are saved and retry.')
       return 1
     endif
 
